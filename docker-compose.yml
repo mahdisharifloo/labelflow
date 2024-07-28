@@ -1,0 +1,61 @@
+version: "3.9"
+services:
+  app:
+    user: "1000:1000"
+    stdin_open: true
+    tty: true
+    build: .
+    # image: heartexlabs/label-studio:latest
+    image: repo.kukala.ir/label-studio:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # Exposing the default Label Studio port directly
+    depends_on:
+      - db
+    environment:
+      - DJANGO_DB=default
+      - POSTGRE_NAME=postgres
+      - POSTGRE_USER=postgres
+      - POSTGRE_PASSWORD=
+      - POSTGRE_PORT=5432
+      - POSTGRE_HOST=db
+      - LABEL_STUDIO_HOST=${LABEL_STUDIO_HOST:-}
+      - JSON_LOG=1
+      - LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK=true
+      - LABEL_STUDIO_USERNAME=admin@labelflow.dev
+      - LABEL_STUDIO_PASSWORD=admin@labelflow
+      - COLLECT_ANALYTICS=False
+      - LOCAL_FILES_SERVING_ENABLED=true
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
+      - IMPORT_TASKS_MAX_LIMIT=1000
+      # - LOG_LEVEL=DEBUG
+    volumes:
+      - ./mydata:/label-studio/data:rw
+    command: label-studio start --host 0.0.0.0 --port 8080
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '1.0'
+          memory: 1024M
+
+  db:
+    # image: postgres:11.5
+    image: postgres:13
+    hostname: db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ${POSTGRES_DATA_DIR:-./postgres-data}:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
